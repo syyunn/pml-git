@@ -1,3 +1,4 @@
 .idea
-file-changes/out
+file-changes/out/*.aux
 file-changes/~$memo.docx
+
