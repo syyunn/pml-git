@@ -1,0 +1,361 @@
+\documentclass[10pt]{article}
+
+\usepackage{booktabs}
+
+% Formatting
+\usepackage[left=0.5in, right=0.5in, top=0.5in, bottom=0.5in]{geometry}
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\normalsize\bfseries}
+\titleformat*{\subsubsection}{\large\bfseries}
+
+% line spacing
+\titlespacing{\section}{0pt}{\parskip}{-\parskip}
+\titlespacing{\subsection}{0pt}{\parskip}{-\parskip}
+\titlespacing{\subsubsection}{0pt}{\parskip}{-\parskip}
+
+% Math symobls
+\usepackage{amsmath, amssymb, mathtools}
+%% Abstraction
+%%% Expectation
+\DeclareMathOperator{\E}{\mathop{{}\mathbb{E}}} % for expectation symbol
+\DeclareMathOperator{\sigmoid}{sigmoid}
+\DeclareMathOperator{\T}{T}
+\DeclareMathOperator{\x}{\mathbf{x}}
+\DeclareMathOperator{\Wn}{W_n}
+
+%%% Comment
+\newcommand{\comment}[1]{%
+  \text{\phantom{(#1)}} \tag{#1}
+}
+%%% Iverson bracket
+\usepackage{stmaryrd}
+\usepackage{textcomp}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+%%% Bold 1 for indicator function
+\usepackage{dsfont}
+
+\usepackage{xcolor}
+
+\newcommand{\toptitlebar}{
+  \hrule height 4pt
+  \vskip 0.25in
+  \vskip -\parskip%
+}
+\newcommand{\bottomtitlebar}{
+  \vskip 0.29in
+  \vskip -\parskip
+  \hrule height 1pt
+  \vskip 0.09in%
+}
+\renewcommand{\maketitle}{
+  \vbox{%
+%    \hsize\textwidth
+%    \linewidth\hsize
+%    \vskip 0.1in
+    \toptitlebar
+    \centering
+    {\Large\bf 6.867: Homework 3}
+    \bottomtitlebar
+  }
+}
+
+\newcommand{\brows}[1]{%
+  \begin{bmatrix}
+  \begin{array}{@{\protect\rotvert\;}c@{\;\protect\rotvert}}
+  #1
+  \end{array}
+  \end{bmatrix}
+}
+\newcommand{\rotvert}{\rotatebox[origin=c]{90}{$\vert$}}
+\newcommand{\rowsvdots}{\multicolumn{1}{@{}c@{}}{\vdots}}
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt}
+
+% table
+\usepackage{multirow}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\usepackage{float}
+
+% To draw figures
+\usepackage{graphicx}
+\usepackage{caption,subcaption}
+\usepackage{mathtools}
+
+\begin{document}
+\maketitle
+
+\section{Globally Linear Embedding}
+\subsection{Show that $M=\left(I_{m}-W_{n}\right)^{T}\left(I_{m}-W_{n}\right)$ is a positive semi-definite matrix}
+\vspace*{1mm}
+\noindent To show a $m \times m$ matrix $M$ is positive semidefinite, we need to show follows:
+\begin{align*}
+  &\text{1. M is a symmetric matrix}\\
+  &\text{2. $\x^TM\x \ge 0$ for all $\x \in \mathbb{R}^m$ }
+\end{align*}
+
+\noindent For 1, symmetric property, we can show this property as follows:
+\begin{align*}
+  M^T &= (\left(I_{m}-W_{n}\right)^{T}\left(I_{m}-W_{n}\right))^T\\
+  &= \left(I_{m}-W_{n}\right)^T(\left(I_{m}-W_{n}\right)^T)^T\\
+  &= \left(I_{m}-W_{n}\right)^{T}\left(I_{m}-W_{n}\right)\\
+  &= M\\
+  & \iff \text{M is symmetric matrix}\\
+\end{align*}
+
+\noindent For 2, all nonnegative entries condition, we can show this property as follows:
+\begin{align*}
+  &\text{Let's denote } I_{m}-W_{n} \text{ as } A. \text{ Then } M=A^{T}A.\\
+  &\text{For given column vector } \x, \\
+  & \x^TM\x = \x^{T}A^{T}A\x = (A\x)^{T}A\x \ge 0\\
+  \tag{QED}&\iff M \text{ is positive semidefinite.}
+\end{align*}
+
+\subsection{Re-express the objective function $\Phi(Y)$}
+\vspace*{1mm}
+$\Phi(Y)$ is sum of errors how much $y_i$, a lower dimensional representation of $x_i$, deviates from its reconstruction $\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}$, a weighted linear combination of its $n$-nearest neigbours.
+As we can check from the below definition, the errors are measured by square of L-2 norm.
+%Let's consider a matrix $Y-\Wn Y \in \mathbb{R}^{m \times d}$
+$$\Phi(Y):=\sum_{i=1}^{m}\left\|y_{i}-\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}\right\|^{2}$$
+
+\noindent Let's express such errors, which measured per each data points, as $\epsilon_i \triangleq y_{i} - \sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j} \text{ for } i \in \{1, \hdots, m\}$.
+Then we can notice $\epsilon_i \in \mathbb{R}^d$. In addition, if we notate $l$-th dimension of $\epsilon_i$ as $\epsilon_i^l$, we can understand that squre of L-2 norm of an error of $i$-th data point as $\left\|y_{i}-\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}\right\|^{2}=||\epsilon_i||^2 = \sum_{l=1}^d (\epsilon_i^l)^2$.
+So using the \textit{\textbf{Hint}}, we can aggregate all $(\epsilon_i^l)^2$ for all $i \in \{1, \hdots, m\}$ and $l \in \{1, \hdots, d\}$ by defining $A$ in Frobenius norm $\|A\|_{\mathrm{F}}=\sqrt{\operatorname{Tr}\left(A^{T} A\right)}$ as follows:
+$$
+A \triangleq \brows{\epsilon_1^T \\ \epsilon_2^T \\ \rowsvdots \\ \epsilon_m^T}
+$$
+Then
+\begin{align*}
+  \|A\|_{\mathrm{F}}^{2}&=\operatorname{Tr}\left(A^{T} A\right)\\
+  &=\operatorname{Tr}\left(\begin{bmatrix}
+    \vert &  \vert & &\vert \\
+    \epsilon_1 & \epsilon_2 & \hdots &\epsilon_m \\
+    \vert & \vert& & \vert
+\end{bmatrix}
+\brows{\epsilon_1^T \\ \epsilon_2^T \\ \rowsvdots \\ \epsilon_m^T}\right)\\
+  &=\operatorname{Tr}\left(
+  \begin{bmatrix}
+    \sum_{i=1}^m(\epsilon_i^1)^2 &&& \\
+    &\sum_{i=1}^m(\epsilon_i^2)^2 &&&\\
+    &&\ddots && \\
+    &&&    \sum_{i=1}^m(\epsilon_i^d)^2& \\
+  \end{bmatrix}\right)\\
+  &=\sum_{i=1}^m\sum_{l=1}^d(\epsilon_i^l)^2\\
+  &=\sum_{i=1}^m\left\|y_{i}-\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}\right\|\\
+  \tag{1}&=\Phi(Y)
+\end{align*}
+
+\noindent Therefore, since $\epsilon_i \triangleq y_{i} - \sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}$ and $A$ is row-wise stack up of $\epsilon_i$s, we can represent $A$ using $Y$ and $\Wn$ as follows:
+\begin{align*}
+A &\triangleq \brows{\epsilon_1^T \\ \epsilon_2^T \\ \rowsvdots \\ \epsilon_m^T} \\
+  \tag{2}&=Y-\Wn Y
+\end{align*}
+Thus, $\Phi(Y) =\|Y- \Wn Y\|_{\mathrm{F}}^{2}$ by using (1) and (2).
+
+\subsection{Write the Lagrangian of the problem using Part 2}
+\vspace*{1mm}
+Re-writing Lagrangian is started from incorporating the constraints into the objective. As guided in the problem, we only incorporates the first constraint, $\frac{1}{m} \sum_{i=1}^{m} y_{i} y_{i}^{T}=I_{d}$. Then the Lagrangian $L(Y)$ is written as follows:
+$$
+L(Y) = \sum_{i=1}^{m}\left\|y_{i}-\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}\right\|^{2} - \sum_{\alpha, \beta =1}^d \lambda_{\alpha\beta}\left[\frac{1}{m}\sum_{i=1}^my_i^\alpha y_i^\beta - \delta_{\alpha\beta}\right]
+$$
+where $\lambda_{\alpha\beta}$ represents Lagrange multiplier(s) which satisfies $\lambda_{\alpha\beta} = \lambda_{\beta\alpha}$, $y_i^{\alpha}$ and $y_i^{\beta}$ represents $\alpha$-th or $\beta$-th dimensional element of $y_i$, and $\delta_{\alpha\beta}$ represents Kronecker delta, with $\delta_{\alpha \beta}=0 \text { if } \alpha \neq \beta \text { and } \delta_{\alpha \beta}=1 \text { if } \alpha = \beta$.
+Intuitively, the second term with Lagrange multiplier $\lambda_{\alpha\beta}$ enforces $\frac{1}{m} \sum_{i=1}^{m} y_{i} y_{i}^{T}$ to be $d \times d$ identity matrix, $I_{d}$. \\
+Now, using the conclusion from the Part2, let's re-write the first term of the Lagrangian, $\sum_{i=1}^{m}\left\|y_{i}-\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}\right\|^{2}$.
+
+\begin{align*}
+\comment{conclusion of Part 2.}\sum_{i=1}^{m}\left\|y_{i}-\sum_{j=1}^{m}\left(W_{n}\right)_{i, j} y_{j}\right\|^{2} &= ||Y-\Wn Y||_F^{2}\\
+&= ||(I_m-\Wn)Y||_F^{2}\\
+\comment{$||A||_F = \sqrt{\operatorname{Tr}(A^TA)}$}&= \operatorname{Tr}((I_m-\Wn)Y)^T(I_m-\Wn)Y))\\
+&= \operatorname{Tr}(Y^T(I_m-\Wn)^T(I_m-\Wn)Y) \\
+\comment{$M=\left(I_{m}-W_{n}\right)^{T}\left(I_{m}-W_{n}\right)$}&= \operatorname{Tr}(Y^TMY)
+\end{align*}\
+
+\noindent Thus, we get the first term of our goal. Now we can also re-write the second term $\sum_{\alpha, \beta =1}^d \lambda_{\alpha\beta}\left[\frac{1}{m}\sum_{i=1}^my_i^\alpha y_i^\beta - \delta_{\alpha\beta}\right]$ as follows using $\operatorname{Tr}$:
+$$\operatorname{Tr}\left(\Lambda\left(\frac{1}{m} Y^{T} Y-I_{d}\right)\right)$$
+where $\Lambda=\left[\lambda_{\alpha \beta}\right]_{1 \leq \alpha, \beta \leq d} \in \mathbb{R}^{d \times d}$. From the above expression, we can understand $\operatorname{Tr}$ aggregates all element-wise errors which is correspondent to two summations, $\sum_{\alpha, \beta =1}^d$ and $\sum_{i=1}^my_i^\alpha y_i^\beta$, and $\Lambda$ assorts all Lagrangian multipliers in matrix form.\\
+Now, let's re-write the entire Lagrangian $L(Y)$ using the first and second term as follows:
+
+\begin{align*}
+\tag{1} L(Y)&=\operatorname{Tr}\left(Y^{T} M Y\right)-\operatorname{Tr}\left(\Lambda\left(\frac{1}{m} Y^{T} Y-I_{d}\right)\right)\\
+  &= ||(I_m-\Wn)Y||_F^{2} - \operatorname{Tr}\left(\Lambda\left(\frac{1}{m} Y^{T} Y-I_{d}\right)\right)
+\end{align*}
+
+%\noindent One remaining difference from our final goal and the above formulation is that $\Lambda$ is not \textit{diagonal} in the above case. To fix this, let's think about an orthogonal matrix $U \in O(d)$ s.t. $U^T\Lambda U=\tilde{\Lambda}$ where $O(d)$ defines the set including all $d \times d$ real orthogonal matrices and $\tilde{A}$ is a diagonal matrix.
+%We're going to show diagonal form of $\Lambda$ actually has the same solution with the entire entries' form of $\Lambda$ by solving the above Lagrangian.
+
+To solve the Lagrangian, we take partial deriviate of the above Lagrangian $L(Y)$ in terms of Y as follows:
+
+\begin{align*}
+  2 \cdot \frac{\delta \mathscr{L(Y)}}{\delta Y}&= \left(I_{m}-\Wn\right)^T\left(I_{m}-\Wn\right)Y-\frac{1}{m} Y \Lambda^T \\
+  \tag{2} \comment{$\lambda_{\alpha\beta} = \lambda_{\beta\alpha}$, thus $\Lambda$ is symmetric matrix}&= \left(I_{m}-\Wn\right)^T\left(I_{m}-\Wn\right)Y-\frac{1}{m} Y \Lambda\\
+  \intertext{Since symmetric matrix is diagonalizable, so let $\Lambda\triangleq U\tilde{A}U^T$ where $U \text { a } d \times d \text { orthogonal matrix and } \tilde{\Lambda}=\operatorname{diag}\left(d_{1}, \ldots, d_{d}\right)$}
+    &= \left(I_{m}-\Wn\right)^T\left(I_{m}-\Wn\right)Y-\frac{1}{m} Y U\tilde{\Lambda}U^T
+\end{align*}
+If we multiply $U$ to both sides and let $\tilde{Y}$ \triangleq YU$, then
+\begin{align*}
+  2 \cdot \frac{\delta \mathscr{L(Y)}}{\delta Y}U&= \left(I_{m}-\Wn\right)^T\left(I_{m}-\Wn\right)YU-\frac{1}{m} Y U\tilde{\Lambda}U^{T}U\\
+  \intertext{Using the property of orthgonal matrix $U^TU = I_d$}
+  \tag{3} &= \left(I_{m}-\Wn\right)^T\left(I_{m}-\Wn\right)\tilde{Y} -\frac{1}{m} \tilde{Y}\tilde{\Lambda}
+\end{align*}
+
+By comparing (2) and (3), we can understand that the original Lagrangian's FOC condition is transformed into the case where the matrix containing Lagrangian multipliers is \textbf{diagonal} under the orthogonal transformation $U$.
+This means that for given any solution $(Y^*, \Lambda^*)$ of the original Lagrangian, we can derive another form of solution $(\tilde{Y}^*, \tilde{\Lambda}^*)$ where the matrix of Lagrangian multipliers is diagonal using the orthgonal transformation $U$.
+
+Therefore, w.l.o.g., we can change the formulation of original Lagrangian (1) with a diagonal $\Lambda \triangleq \operatorname{diag}\left(d_{1}, \ldots, d_{d}\right)$ as follows:
+%$Y}$ and $\tilde{\Lambda}$ into $Y$ and $\Lambda$ to go back to the notation given by the problem set and it solves the Part 3 because both Lagrangians $L(Y)$ and $L_U(\tilde{Y})$ are equivalent statements in terms of optimization.
+\begin{align*}
+\tag{4} L(Y)=\operatorname{Tr}\left(Y^{T} M Y\right)-\operatorname{Tr}\left(\Lambda\left(\frac{1}{m} Y^{T} Y-I_{d}\right)\right)
+\end{align*}
+%
+%\noindent Since it's known that Lagrangian is invariant under such orthogonal transformation, we can re-write our Lagrangian as follows by :
+%
+%$$L_U(\tilde{Y})=\operatorname{Tr}\left(\tilde{Y}^{T} M \tilde{Y}\right)-\operatorname{Tr}\left(\tilde{\Lambda}\left(\frac{1}{m} \tilde{Y}^{T}\tilde{Y}-I_{d}\right)\right)$$
+%\noindent where $\tilde{Y}=U^{T}Y$ and $\tilde{\Lambda}=U^T\Lambda U$. We can check that this formulation incorporates the first constraint as well from the formulation as follows:
+%
+%$$
+%\frac{1}{m} \tilde{Y}^{T}\tilde{Y}=U^{T}YY^TU = UI_dU^T = UU^T = I_d
+%$$
+%
+%\noindent In this formulation, $\tilde{A}$ is a diagonal matrix by construction. Therefore, w.l.o.g., let's re-write $\tilde{Y}$ and $\tilde{\Lambda}$ into $Y$ and $\Lambda$ to go back to the notation given by the problem set and it solves the Part 3 because both Lagrangians $L(Y)$ and $L_U(\tilde{Y})$ are equivalent statements in terms of optimization.
+%$$L(Y)=\operatorname{Tr}\left(Y^{T} M Y\right)-\operatorname{Tr}\left(\Lambda\left(\frac{1}{m} Y^{T} Y-I_{d}\right)\right)$$
+
+%If we denote a collection of solution of Lagrangian and its corresponding multiplier as $\varphi \triangleq \left[Y^*, \Lambda^* \right]$.
+%It is known that such solution $\varphi$ invariant to the transformation under $U$, i.e., $\varphi_U = [U^TY^*, U^T\Lambda^*U]$. (This is because such transformation appears as the dot product inside the formulation of the original and transformed Lagrangian, $L$ and $L_G$, and orthogonal transformation preserves dot product.)
+
+%$L(Y)=\operatorname{Tr}\left(Y^{T} M Y\right)-\operatorname{Tr}\left(\Lambda\left(\frac{1}{m} Y^{T} Y-I_{d}\right)\right)$
+
+\subsection{Solving the constrained LLE optimization problem}
+\vspace*{1mm}
+%Let's notate the solution of Part 3's Lagrangian (4) as $(Y^*, \Lambda^*)$. Then such solution is transformed into $(Y^*P, P\Lambda^*P^T)= (Y^*P, \Lambda^*_{asc})$ where $P$ is the permutation matrix having the property as follows:
+%To re-arrange the above defined $\Lambda \triangleq \operatorname{diag}\left(d_{1}, \ldots, d_{d}\right)$ in ascending order, let's define a permutation matrix $P \in \mathbb{R}^{d \times d}$ as follows:
+%$$
+%P\Lambda P^T=\Lambda'=\operatorname{diag}\left(d_{1}^{\prime}, \ldots, d_{d}^{\prime}\right) \text { with } d_{1}^{\prime} \leq \cdots \leq d_{d}^{\prime}
+%$$
+%It's worth noting that permutation matrix $P$ is orthogonal because $PP^T=P^TP=I_d$ because applying same permutation twice in a row doesn't make any change.
+
+Now, let's solve the FOC condition of the Lagrangian from (2):
+\begin{align*}
+&\left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)Y-\frac{1}{m} Y \Lambda =0 \\
+&\iff \left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)Y = \frac{1}{m} Y \Lambda
+%\\&\iff \left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)YP = \frac{1}{m} YP \Lambda \\
+%&\iff \left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)YPP^T = \frac{1}{m} YP \Lambda P^T\\
+%\comment{$PP^T = I_d$}&\iff \left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)Y = \frac{1}{m} Y\Lambda'\\
+\end{align*}
+If we look at the above formulation column-wisely, it corresponds to the definition of eigenvector and eigenvalue as follows:
+\begin{align*}
+&\left(I_m- \Wn \right)^T\left(I_m- \Wn\right) v_{i}=\lambda_{i} v_{i}, \quad \lambda_{i}=\frac{1}{m} d_{i} \text{ for } i = \{1, 2, \hdots, d\} \text{ where }  v_i \text{ is } i\text{-th column of } Y \text{ and } d_i \text{ is } i\text{-th diagonal element of } \Lambda. \\
+&\iff Mv_i =\lambda_{i} v_{i}, \quad \lambda_{i}=\frac{1}{m} d_{i} \text{ for } i = \{1, 2, \hdots, d\}
+\end{align*}
+Now from the property found in Part 1, since $M$ is positive semidefinite, $\lambda_{i}$s are all non-negative.
+Moreover, $[1, 1, \hdots, ... , 1]^T$ which is a column vector with $m$ number of $1$s is $\alpha_1$ which is an eigenvector associated with smallest eigenvalue $0$. This is because $(I_m-\Wn)\alpha_1 = \mathbf{0}$ from the given two conditions - i) $\left(W_{n}\right)_{i j}=0 \text { for } x_{j} \notin \mathcal{N}_{n}\left(x_{i}\right)$ and ii) $\sum_{j=1}^{m}\left(W_{n}\right)_{i j}=1 \text { for } i \in\{1, \ldots, m\}$ - where row-wise sum using $\alpha_1$ of $I_{m}-\mathrm{W}_{\mathrm{n}}$ is always set to be $0$ for each row ($1$ from $I_m$ is subtracted with $1$ from the summation of $i \ne j$ entries for each row).
+%row of $(W_n)$ includes elements sum up to $1$ except the element at diagonal positions.
+This fact implies that $\alpha_1$ and $0$ is an eigenvector and corresponding eigenvalue for $\left(I_m- \Wn \right)^T\left(I_m- \Wn\right)$, i.e. $\left(I_m- \Wn \right)^T\left(I_m- \Wn\right)\alpha_1 = 0\cdot\alpha_1$.
+
+In addition, by left multiplying $Y^T$ on the both sides of $\left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)Y = \frac{1}{m} Y\Lambda$ we get as follows:
+\begin{align*}
+&Y^T\left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)Y = \frac{1}{m} Y^TY\Lambda\\$
+&\iff Y^TMY= \Lambda \quad \text{(using $M=\left(I_{m}-\Wn\right)^T\left(I_{m} - \Wn\right)$ and $\frac{1}{m}Y^TY=I_d$) }
+\end{align*}
+
+Since we are minimizing $\Phi(Y) =\|Y- \Wn Y\|_{\mathrm{F}}^{2} = ||(I_m - \Wn)Y||_F^2=\operatorname{Tr}(Y^T(I_m - \Wn)^T(I_m - \Wn)Y) = \operatorname{Tr}(Y^TMY) = \operatorname{Tr}(\Lambda) =  \sum_{i=1}^{d} d_i =  m\sum_{i=1}^d\lambda_i$, we can minimize this $\Phi(Y)$ by choosing the smallest $d$ number of eigenvalues' corresponding eigenvectors as $v_i$s except the case of eigenvalue of $0$ and its correspondent eigenvector $\alpha_1 = [1, 1, \hdots, 1]^T$. This is because $\alpha_1$ deviates from the condition that $\sum_{i=1}^{m} y_{i} = \mathbf{0}$ because $\sum_{i=1}^{m} (\alpha_1)_m = m  >0$. Therefore, since $\lambda_i$s are all non-negative, if we line up all eigvenvalues from $0$ to ascending order, then $d$ number of corresponding eigenvectors except $\alpha_1$ will be $\alpha_2, \alpha_3, \hdots, \alpha_{d+1}$, upto a scaling constant, as the Part 4 expects. \tag{QED}
+
+%Then let's multiply the FOC condition of our Lagrangian (2)
+%Since permutation matrix $P$ is orthogonal because $PP^T=P^TP$ should be $I_d$,
+
+\section{Learning Hidden Markov Models}
+\subsection{Derive $\alpha(z_{t}=k)$}
+
+Let's start from the state where $z_{t-1} = j$. Then we can get to the next state of $z_{t} = k$ with the probability of an entry of transition matrix $A$, $A_{jk}$.
+Then by summing up such quantity over all possible $j$s, we get as follows:
+
+$$
+\sum_{j=1}^k \alpha(z_{t-1}=j)\cdot A_{jk}
+$$
+
+Then by multiply next step that is $z_{t} = k$ omitting $y_{t}$ with probability of $p(y_{t}|z_{t}=k)$, we get what we want:
+
+$$
+\alpha(z_{t}=k) = p(y_{t}|z_{t}=k)\sum_{j=1}^k \alpha(z_{t-1}=j)\cdot A_{jk}
+$$
+
+\subsection{Derive $\gamma(z_{t}=k)$}
+\begin{align*}
+\gamma(z_{t}=k) &= p(z_t =k | Y)\\
+&= \frac{p(z_t=k , Y)}{p(Y)}\\
+&= \frac{p(y_{t+1}, y_{t+2}, \hdots, y_T|y_1, y_2, \hdots, y_t, z_t = k)\cdot p(y_1, y_2, \hdots, y_t, z_t = k)}{p(Y)}\\
+&= \frac{p(y_{t+1}, y_{t+2}, \hdots, y_T|y_1, y_2, \hdots, y_t, z_t = k)\cdot \alpha(z_t = k)}{p(Y)}\\
+\comment{Conditional Independence} &= \frac{p(y_{t+1}, y_{t+2}, \hdots, y_T|z_t = k)\cdot \alpha(z_t = k)}{p(Y)}\\
+&= \frac{\beta(z_t = k)\cdot \alpha(z_t = k)}{p(Y)}\\
+\end{align*}
+
+\subsection{Derive $\pi_{k}^*$}
+Let's start from constructing Lagrangian $\mathcal{L}$ with a constraint on $\pi$, $\sum_{k=1}^{K} \pi_{k}=1$ as follows:
+\begin{align*}
+\mathcal{L} &= Q\left(\Theta^{\text {new }}, \Theta\right) - \lambda \cdot (\sum_{k=1}^{K} \pi_{k} - 1)\\
+&= \sum_{k=1}^{K} \gamma\left(z_{1}=k\right) \ln \left(\pi_{k}\right) +\sum_{t=2}^{T} \sum_{j=1}^{K} \sum_{k=1}^{K} \xi\left(z_{t-1}=j, z_{t}=k\right) \ln \left(A_{j k}\right) +\sum_{t=1}^{T} \sum_{k=1}^{K} \gamma\left(z_{t}=k\right) \ln \left(p\left(y_{t} \mid z_{t}=k\right)\right) - \lambda \cdot (\sum_{k=1}^{K} \pi_{k} - 1)
+\end{align*}
+
+Now take the partial derivative of $\mathcal{L}$ over $\pi_k$ gives:
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial \pi_k} &= \frac{\gamma\left(z_{1}=k\right)}{\pi_k} - \lambda\\
+&= 0\\
+&\iff \lambda = \frac{\gamma\left(z_{1}=k\right)}{\pi_k}
+\end{align*}
+
+Now using $\lambda=\frac{\gamma\left(z_{1}=k\right)}{\pi_k}$ and $\sum_{k=1}^{K} \pi_{k} = 1$ we get:
+\begin{align*}
+\sum_{k=1}^{K} \pi_{k} = \frac{1}{\lambda}\sum_{k=1}^K \gamma(z_1 = k) = 1 &\iff \lambda = \sum_{k=1}^K \gamma(z_1 = k) \\
+&\Rightarrow \pi_k^* = \frac{\gamma(z_1 = k)}{\sum_{k=1}^K \gamma(z_1 = k)}\\
+\comment{$\sum_{k=1}^K \gamma(z_1 = k)= 1$} & \iff \pi_k^* = \gamma(z_1 = k) \quad \forall 1 \le k \le K
+\end{align*}
+
+\subsection{Derive $\mu_{k}^*$ and  $\sigma_{k}^{2*}$}
+Let's start from $p(y_t | z_{t}=k) \sim \mathcal{N}(\mu_k, \sigma_k^2)$ whose PDF is written as follows:
+\begin{align*}
+& p(y_t | z_{t}=k) = \frac{1}{\sigma_k \sqrt{2 \pi}} e^{-\frac{1}{2}\left(\frac{y_t-\mu_k}{\sigma_k}\right)^{2}} \\
+&\iff \ln(p(y_t | z_{t}=k)) =  -\ln\sigma_k - \frac{1}{2\sigma_k^2}(y_t - \mu_k)^2 - \ln(\sqrt{2\pi})
+\end{align*}
+Recalling that $\gamma \text { and } \xi$ are regarded as constant in $M$-step, the only term that contains $p(y_t | z_{t}=k)$ is the third term of $Q\left(\Theta^{\text {new }}, \Theta\right)$.
+So now let's compute partial derivative of $Q\left(\Theta^{\text {new }}, \Theta\right)$ w.r.t. $\mu_k$:
+\begin{align*}
+\frac{\partial Q\left(\Theta^{\text {new }}, \Theta\right)}{\partial \mu_k} &=  \sum_{t=1}^{T}\gamma(z_t=k)\frac{1}{\sigma_k^2}(y_k-\mu_k) = 0\\
+&\Rightarrow \mu_{k}^*=\frac{\sum_{t=1}^T \gamma\left(z_{t}=k\right) y_{t}}{\sum_{t=1}^T \gamma\left(z_{t}=k\right)}
+\end{align*}
+
+Similarly,
+
+\begin{align*}
+\frac{\partial Q\left(\Theta^{\text {new }}, \Theta\right)}{\partial \sigma_k^2} &= \sum_{t=1}^T \gamma\left(z_{t}=k\right) \left[ - \frac{1}{\sigma_k} + \frac{1}{\sigma_k^3}(y_t - \mu_k)^2 \right] = 0\\
+&\iff \sum_{t=1}^T \gamma\left(z_{t}=k\right)[-\sigma_k^2 + (y_t - \mu_k)^2] = 0\\
+&\Rightarrow \sigma_{k}^2^*=\frac{\sum_{t=1}^T \gamma\left(z_{t}=k\right) (y_t - \mu_k)^2}{\sum_{t=1}^T \gamma\left(z_{t}=k\right)}
+\end{align*}
+
+\subsection{Upper triangular $A$}
+Upper triangular $A$ should satisfy following quantity:
+
+$$
+A_{jk} \begin{align} = 0 \quad \text{if} \quad j > k  \end{align} \quad \text{and} \quad \sum_{j=1}^K A_{jk}} = 1
+$$
+
+In addition, $A_{jk}$ is represented as follows:
+
+$$
+A_{j k}=\frac{\sum_{t=2}^{T} \xi\left(z_{t-1}=j, z_{t}=k\right)}{\sum_{l=1}^{K} \sum_{t=2}^{T} \xi\left(z_{t-1}=j, z_{t}=l\right)}
+$$
+
+Therefore, in case $j > k$, $\xi\left(z_{t-1}=j, z_{t}=k\right)=0 \quad \forall t=\{2, 3, \hdots, T\}$ to ensure $A$ to be upper triangular.\\
+
+For $\xi\left(z_{t-1}=j, z_{t}=k\right)=\frac{\alpha\left(z_{t-1}=j\right) p\left(y_{t} \mid z_{t}\right) A_{jk} \beta\left(z_{t}=k\right)}{p(\mathbf{Y})}$ to be $0$, $A_{jk}$ must be $0$. In other words, \textbf{in case of $j > k$, $A_{jk}$ must be initialized as $0$ to ensure A to be upper traingular} regardless of with which quantity any other parameter - $\alpha, \beta, p(y|z), p(Y)$ - being assigned at any step of iterations.
+
+
+For the case of $j \le k$, $A_{jk}$ can be initialized as any quantity if they satisfy $\sum_{k=j}^K A_{jk}} = 1$. To do so, we can leverage Dirichlet distribution that can enforce the sum of entries to be $1$. Since we already have $j-1$ number of $0$s for each $j-th$ row from the case of $j > k$, $K-j+1$ number of $j \le k$ entries should be sum up to $1$.
+To do so, \textbf{we can initialize $A_{jk}$s for $j \le k$ as follows}:
+
+$$A_{j,j}, A_{j,j+1}, \hdots, A_{j,K} \sim \operatorname{Dir}(\alpha) \text{ where } \alpha = [1, 1, \hdots, 1] \in \mathbb{R}^{K-j+1}\quad \forall j \in \{1, 2, \hdots, K\}$$
+
+This will enforce the upper triangular entries to be sum up to $1$.
+
+\end{document}
