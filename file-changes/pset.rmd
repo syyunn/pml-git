@@ -1,0 +1,276 @@
+---
+author: John Doe
+output:
+    html_document
+header-includes:
+    \usepackage{amsmath, amssymb, mathtools, lmodern}
+---
+
+```{r}
+# clear out previous in-memory caches
+rm(list=ls())
+
+Sys.setenv(LANG = "en")
+
+# setup wordir
+working_dir <- "/Users/syyun/17.800/pset8"
+setwd(working_dir)
+
+# import libs
+library(foreign)
+library(matrixStats)
+library(stargazer)
+library(ggplot2)
+# import custom functions
+# source('./utils.R')
+```
+
+[comment]: LaTex Declarations
+\newcommand{\ind}{\perp\!\!\!\!\!\perp}
+\DeclareMathOperator{\E}{\mathop{{}\mathbb{E}}}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\V}{\mathop{{}\mathbb{V}}}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\cor}{corr}
+\DeclareMathOperator{\Cor}{Cor}
+\DeclareMathOperator{\Bias}{Bias}
+\DeclareMathOperator{\biased}{\hat{\sigma}^2_{\text{biased}}}
+\DeclareMathOperator{\biasedsd}{\hat{\sigma}_{\text{biased}}}
+\DeclareMathOperator{\unbiased}{\hat{\sigma}^2_{\text{unbiased}}}
+\DeclareMathOperator{\samplemean}{\bar{X_n}}
+\DeclareMathOperator{\mean}{\frac{1}{n}{\sum_i^n}}
+\DeclareMathOperator{\CI}{CI}
+\DeclareMathOperator*{\arg}{arg}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator{\biased}{\hat{\sigma}^2_{\text{biased}}}
+\DeclareMathOperator{\biaseddef}{\frac{1}{n}{\sum_i^n}(X_i-\bar{X_n})^2}
+\DeclareMathOperator{\independent}{\perp\!\!\!\perp}
+
+\usepackage{scalerel}
+\newcommand\boxxed[1]{
+    {\ThisStyle{\fbox{$\SavedStyle#1$}}}
+}
+\newcommand{\comment}[1]{%
+  \text{} \tag{#1}
+}
+\newcommand\iid{i.i.d.}
+
+
+### Problem 1
+
+#### a)
+\begin{align*}
+\hat{\beta_1} &= \frac{\sum_{i=1}^n(x_i-\bar{x})(y_i-\bar{y})}{\sum_{i=1}^n(x_i-\bar{x})^2} \\
+&= \frac{\sum_{i=1}^n(x_i-\bar{x})y_i}{\sum_{i=1}^n(x_i-\bar{x})^2} \\
+&= \frac{\sum_{i=1}^n(x_iy_i-\bar{x}y_i)}{\sum_{i=1}^n x_i^2 - \sum_{i=1}^n 2x_i \bar{x} + \sum_{i=1}^n \bar{x}^2} \\
+\comment{$\sum_{i=1}^nx_iy_i = n_1\bar{y_1}$, $\sum_{i=1}^n y_i = n_1\bar{y_1} + n_0\bar{y_0}$}&= \frac{n_1\bar{y_1} -\bar{x}(n_1\bar{y_1} + n_0\bar{y_0})}{\sum_{i=1}^n x_i^2 - \sum_{i=1}^n 2x_i \bar{x} + \sum_{i=1}^n \bar{x}^2} \\
+\comment{$\bar{x}=\frac{n_1}{n_1+n_2}$}&= \frac{n_1\bar{y_1} -\frac{n_1}{n_1+n_2}(n_1\bar{y_1} + n_0\bar{y_0})}{\sum_{i=1}^n x_i^2 - \sum_{i=1}^n 2x_i \bar{x} + \sum_{i=1}^n \bar{x}^2} \\
+\comment{$\sum_{i=1}^n x_i^2 = \sum_{i=1}^n x_i = n_1$, $\bar{x} = \frac{n_1}{n_1 + n_0}$}&= \frac{n_1\bar{y_1} -\frac{n_1}{n_1+n_0}(n_1\bar{y_1} + n_0\bar{y_0})}{n_1 - 2\frac{n_1}{n_1+n_0}n_1 + (n_1+n_0)(\frac{n_1}{n_1+n_0})^2 } \\
+\comment{divide $n_1$ for numerator/denominator}&= \frac{\bar{y_1} -\frac{1}{n_1+n_0}(n_1\bar{y_1} + n_0\bar{y_0})}{1- 2\frac{n_1}{n_1+n_0} + (\frac{n_1}{n_1+n_0}) } \\
+\comment{multiply $n_1+n_0$ to numerator/denominator}&= \frac{(n_1 + n_0)\bar{y_1} -(n_1\bar{y_1} + n_0\bar{y_0})}{(n_1 + n_0)- 2n_1 + n_1 } \\
+&= \frac{n_0(\bar{y_1} -\bar{y_0})}{n_0} \\
+&= \bar{y_1} -\bar{y_0} \\
+\end{align*}
+
+
+#### b)
+##### i)
+```{r}
+wash <- read.csv('./washington.csv')
+demo.tochi <- wash$totchi[wash$party == 1]
+repu.tochi <- wash$totchi[wash$party == 2]
+two.sample.t.test <- t.test(repu.tochi, demo.tochi, alternative = "two.sided", var.equal = FALSE)
+print(two.sample.t.test)
+```
+
+According to the result, given the $H_0$ that two groups have same mean, p-value is $0.001186 < 0.01$. It means that we can reject $H_0$ at thesignificance level of $1\%$ and accept the $H_1$ which leads to the conclusion that two groups have different means.
+Point estimate for difference in means is $0.5082$. The t-score is $3.2641$ and p-value is $0.001186$.
+
+##### ii)
+```{r}
+single.binary.regression <- lm(wash$totchi ~ wash$party)
+summary(single.binary.regression)
+```
+
+##### iii)
+In terms of point estimate, the result is almost same for both cases, $0.5082$ and $0.5080$ respectively.
+We can notice that mean difference from two-sample t-test and slope of single binary regression slope is same. This result aligns with the analytical proof from the Part a), which says sample mean difference is same as what OLS estimator estimates for $\beta_1$. This is because both approaches assume all samples are randomly sampled from the population. As we know that sample mean converges to population mean according as sample size grows (Law of Large Numbers), and OLS estimator estimates unbiased population mean with Gauss-Markov assumption (or more narrowly Assumption II and IV),
+we can expect that two population means estimated from the both approaches should converge to same popultion mean as sample size grows.
+
+In terms of t-statistics and p-value, those are almost same as well, (t-stat, p-value) = (3.2641, 0,001302) or (3.237, 0.0013) respectively. This result also aligns with the above reasoning as well.
+
+
+[comment]: <> (, thus results in the same estimation of difference of such group mean difference as well.)
+[comment]: <> (and distribution of such distribution. In addition, two sample t-test assumes the independence between two random variables, $\mu_A$ and $\mu_B$, this)
+[comment]: <> (lead to the conclusion that, under the assumption of $u \sim \mathcal{N}$, $\text{diff} = D\cdot\text{party} + \beta_0 + u$ will give us an unbiased etimate $\hat{D}$ as well where D=$\mu_{demo} - \mu_{rep}$, thus we will always get the same result that is equal to the difference of their population means.)
+
+### c)
+
+#### c.i) AAUW ~ totchi
+
+```{r}
+summary(lm(wash$aauw ~ wash$totchi))
+```
+
+####  c.ii) AAUW ~ ngirls
+
+```{r}
+aauw.ngirls <- lm(wash$aauw ~ wash$ngirls)
+summary(aauw.ngirls)
+```
+
+Regression of aauw on totchi shows the result of negative slope $-5.186$ at the significance level less than 0.001.
+In addition, Regression of aauw on ngrils shows the result of negative slope $-2.856$ but this result is not statistically significant at the level of 0.05.
+Therefore, we can conclude that large (total) family size negatively affects legislator's position of being more liberal on women's issue. Specifically,
+1 more family member decrease 5.186 points of aauw on average.
+
+#### d)
+```{r}
+party.dummy <- wash$party-1
+aauw.ngirls.party <- lm(wash$aauw ~ wash$ngirls + party.dummy)
+summary(aauw.ngirls.party)
+```
+
+Above result shows that being a republican negatively affects being liberal on women's issue. Specifically, being a republican lower the aauw points 74.047 on average compared to being a democrat.
+However, impact of having more girls is not statistically significant and substantially insiginificant, thus hard to tell which relationship does it have with aauw.
+
+
+#### e)
+```{r}
+cols <- c("blue", "red")
+plot(jitter(aauw) ~ jitter(ngirls), data = wash, col = cols[wash$party], pch = 19, xlab="Number of Girls", ylab="AAUW", main="AAUW ~ Number of Girls")
+abline(a=coef(aauw.ngirls)[1], b=coef(aauw.ngirls)[2], col='black', lwd=2)
+abline(a=coef(aauw.ngirls.party)[1], b=coef(aauw.ngirls.party)[2], col='blue', lwd=2)
+abline(a=coef(aauw.ngirls.party)[1]+coef(aauw.ngirls.party)[3], b=coef(aauw.ngirls.party)[2], col='red')
+legend("right", legend = c("demo", "rep"), col = cols, pch = 19)
+legend(x = "topright",          # Position
+       legend = c("aauw ~ ngirls; demo", "aauw ~ ngirls; rep", "aauw ~ ngirls + party; rep"),  # Legend texts
+       lty = c(1, 1),           # Line types
+       col = c("red", "blue", "black"),           # Line colors
+       lwd = 2)                 # Line width
+```
+We can see that democrats tend to have higher level aauw; however, there are no clear tendency that more ngirls results in more aauw regardless of the party identity.
+Moreover, we can find the negative slope result from Part d) is mainly due to the sparse data instances when the number of girls are many. This negative slope was not statistically significant, thus still no clear relationship that shows more girls results in more liberal views on women's issue.
+
+#### f)
+```{r}
+aauw.ngirls.totchi <- lm(wash$aauw ~ wash$ngirls + wash$totchi)
+summary(aauw.ngirls.totchi)
+```
+
+Now the result shows that positive relationship between number of girls and aauw.
+Specifically, the slope is 5.782, which means that 1 more girl results in 5.782 point increase in aauw. This result is significant at the level of 5%.
+
+#### g)
+```{r}
+summary(aauw.ngirls.totchi)
+```
+
+Multiple R-squared is calculated $0.05269$. Adjusted R-squred is smaller than that $0.04828$.
+Compared to the R-squared result from the Part c) which are $0.04148$ and $0.005871$ for `totchi` and `ngirls` respectively, our two variables model has larger R-squared value.
+This is because R-squared is monotonically increasing as more explanatory variables are introduced. This is the reason why we use adjusted R-squared to penalize inclusion of new variables and take the parsimony of model into consideration.
+Therefore, adjusted R-squared is smaller than multiple R-squared in our result.
+
+### Problem 2
+
+#### a)
+The given formula of partialling out is as follows:
+$$
+\hat{\beta}_{1}=\frac{\sum_{i}^{n} \hat{r}_{x z, i} y_{i}}{\sum_{i}^{n} \hat{r}_{x z, i}^{2}}
+$$
+where $\hat{r}_{x z, i}$ are the residuals from the regression of $X$ on $Z$ :
+$$
+x=\lambda+\delta z+r_{x z}
+$$
+
+So let's start from calculating $\hat{\delta}$ as follows:
+
+\begin{align*}
+\hat{\delta} &=\frac{\sum_{i=1}^{n}\left(z_{i}-\bar{z}\right) x_{i}}{\sum_{i=1}^{n}\left(z_{i}-\bar{z}\right)^{2}} \\
+&=\frac{\sum_{i=1}^{n}\left(z_{i}-2\right) x_{i}}{\sum_{i=1}^{n}\left(z_{i}-2\right)^{2}}\\
+&=\frac{0\cdot1+1\cdot1+0\cdot3+-1\cdot4+0\cdot6}{0^{2}+1^{2}+0^{2}-1^{2}+0^{2}}\\
+&=\frac{0\cdot1+1\cdot1+0\cdot3+-1\cdot4+0\cdot6}{0^{2}+1^{2}+0^{2}+(-1)^{2}+0^{2}}
+&=-\frac{3}{2}
+\end{align*}
+
+In addition, estimates of the intercept is as follows:
+\begin{align*}
+\hat{\lambda} &= - \hat{\delta}\bar{z} + \bar{x}\\
+&=-\frac{3}{2}\cdot2 - 3\\
+&=6
+\end{align*}
+
+Therefore, $\hat{r_{xz}}$ is as follows:
+
+$$
+\hat{r_{x z}} = x- \hat{\lambda} - \hat{\delta} z = x -6+\frac{3}{2}z
+$$
+
+Thus,
+
+$$
+\hat{r_{x z}}_{i} = \{-2, -0.5, 0, -0.5,  3\}
+$$
+
+Therefore,
+
+\begin{align*}
+\hat{\beta}_{1}&=\frac{\sum_{i}^{n} \hat{r}_{x z, i} y_{i}}{\sum_{i}^{n} \hat{r}_{x z, i}^{2}}\\
+&=\frac{-10.5}{13.5}\\
+&=-\frac{7}{9}
+\end{align*}
+
+#### b)
+
+Let's confirm the result with following code:
+```{r}
+x <- c(1,1,3,4,6)
+z<- c(2,3,2,1,2)
+y <- c(7,6,4,5,3)
+y.xz <- lm(y ~ x+z)
+print(y.xz)
+```
+
+Since $-\frac{7}{9} = -0.7778$, our hands-on result is correct.
+```{r}
+par(mfrow=c(2,2))
+plot(y ~ x, main= "Y on X")
+abline(lm(y ~ x))
+plot(y ~ z, main= "Y on Z")
+abline(lm(y ~ z))
+plot(x ~ z, main= "X on Z")
+abline(lm(x ~ z))
+plot(y ~ residuals(lm(x~z)) , xlab="r_xz", main= "Y on Residulas of X on Z")
+abline(lm(y ~ residuals(lm(x~z))))
+```
+
+#### c)
+Intuitively, the slope $\hat{\beta_1}$ estimated should be same betwen the case $z$ is partialled out from $x$ then regress $y$ on $r_{xz}$ and $z$ is partialled out from both $y$ and $z$ then regress $r_yz$ on $r_xz$. In both cases, $z$ is successfully ruled out, thus only captures OLS relationship between $x$ and $y$. This is formalized as follows:
+$$
+\begin{aligned}
+\hat{\beta}_{1}&=\frac{\sum_{i}^{n} \hat{r}_{x z} y_{i}}{\sum_{i}^{n} \hat{r}_{x z}^{2}} \\
+&=\frac{\sum_{i}^{n} \hat{r}_{x z} \hat{r}_{y z}}{\sum_{i}^{n} \hat{r}_{x z}^{2}}
+\end{aligned}
+$$
+
+Let's check such result thorugh codes:
+```{r}
+r.yz <- residuals(lm(y~z))
+r.xz <- residuals(lm(x~z))
+first <- sum(r.xz*y)/sum(r.xz^2)
+print(first)
+second <- sum(r.xz*r.yz)/sum(r.xz^2)
+print(second)
+```
+As seen above, those are all same as $-0.7777778$.
+
+#### d)
+
+From the above result, we can check that following 3 cases results in the same quantity for estimated slope of x:
+
+- regress of $y$ on $r_{xz}$
+- regress of $r_{yz}$ on $r_{xz}$
+- regress of $y$ on $x$ and $z$
+
+Theses are all about how to clearly partial out $z$ from the relationship between $x$ and $y$. Equality of the first two cases are explained in Part c). For the first and third one that is questioned in Part d),
+we can think of the estimated slope of $x$ in the case of 2 variables regression will be same for the case when we regress $y$ on $r_{xz}$ because the slope is capturing the relationship between $x$ and $y$ where variance of $z$ is captured by $\hat{\beta_2}$ or already partialed out the $z$ for each case respectively.
